@@ -49,23 +49,65 @@
             text-align: center;
             margin-top: 20px;
         }
+        .error {
+            font-size: 1.2em;
+            color: red;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <h2>Text Similarity Checker</h2>
-        <form action="/predict" method="post">
+        <form id="similarityForm">
             <label for="text1">Text 1:</label>
-            <textarea name="text1" required></textarea>
+            <textarea id="text1" name="text1" required></textarea>
             
             <label for="text2">Text 2:</label>
-            <textarea name="text2" required></textarea>
+            <textarea id="text2" name="text2" required></textarea>
             
             <input type="submit" value="Compare">
         </form>
-        {% if prediction_text %}
-        <div class="result">{{ prediction_text }}</div>
-        {% endif %}
+        
+        <div id="result" class="result"></div>
+        <div id="error" class="error"></div>
     </div>
+
+    <script>
+        document.getElementById("similarityForm").addEventListener("submit", async function(event) {
+            event.preventDefault(); // Prevent page reload
+
+            let text1 = document.getElementById("text1").value.trim();
+            let text2 = document.getElementById("text2").value.trim();
+
+            if (!text1 || !text2) {
+                document.getElementById("error").innerText = "Error: Both text fields are required.";
+                document.getElementById("result").innerText = "";
+                return;
+            }
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text1, text2 })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById("result").innerText = `Similarity Score: ${data["similarity score"]}`;
+                    document.getElementById("error").innerText = "";
+                } else {
+                    document.getElementById("error").innerText = data.error || "An error occurred.";
+                    document.getElementById("result").innerText = "";
+                }
+            } catch (err) {
+                document.getElementById("error").innerText = "Error: Unable to connect to the server.";
+                document.getElementById("result").innerText = "";
+            }
+        });
+    </script>
 </body>
 </html>
